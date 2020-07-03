@@ -1,0 +1,22 @@
+##### Install webserver in Amazon Linux Instance. 
+
+1. Switch to root user. 
+bash$>sudo -i
+
+2. Update your AMI 
+bash$>yum update -y
+
+3. Install webserver with httpd command. 
+bash$>yum install httpd -y
+
+4.start webserver. 
+ bash$>service httpd start
+ 
+ 
+ With this webserver Installed and started. Now you can access your webserver starting page from your local computer http://<PUBLIC_IP OF Your Instance>:80/
+ 
+5. If you want to customize your default login page change below file. 
+  vi /var/www/html/index.html
+  
+6. Restart webserver in case required. 
+service httpd restart
