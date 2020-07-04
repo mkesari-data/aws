@@ -17,6 +17,7 @@ bash$>yum install httpd -y
  
 5. If you want to customize your default login page change below file. 
   vi /var/www/html/index.html
+  Ex : echo " Hello Mohan. How are you. I am From $(hostname -f)" > /var/www/html/index.html
   
 6. Restart webserver in case required. 
 service httpd restart
