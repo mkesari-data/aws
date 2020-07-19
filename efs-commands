@@ -1,0 +1,25 @@
+
+EFS Lab:
+
+1. Create Security Group with NFS Protocol. (efs-sg)
+
+2. Create EFS by attaching about security Gruop
+
+3. Now Attach instances to this EFS. 
+
+4. To attach create couple of instances. 
+    Launch and execute below commands in your ec2 instances : 
+	
+bash>sudo -i
+bash>yum -y update
+
+# Install nfs utils to access EFS 
+bash>yum -y install nfs-utils
+
+# Creating mouting point. 
+bash>mkdir ~/efs-mount-point2
+
+#Now mount the path . 
+bash> mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport fs-76bb80f5.efs.us-east-1.amazonaws.com:/ efs-mount-point2
+
+Note : In the above command "fs-76bb80f5.efs.us-east-1.amazonaws.com"  is our efs ID. 
