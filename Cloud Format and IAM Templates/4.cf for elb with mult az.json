@@ -1,0 +1,75 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+    "Description" : "AWS CloudFormation Sample Template EC2InstanceWithSecurityGroupSample: Create an Amazon EC2 instance running the Amazon Linux AMI. The AMI is chosen based on the region in which the stack is run. This example creates an EC2 security group for the instance to give you SSH access. **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
+    "Resources" : {
+     "EC2Instance1" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "InstanceType" : { "Ref" : "InstanceType" },
+        "KeyName" : { "Ref" : "KeyName" },
+        "SecurityGroups" : [ { "Ref" : "InstanceSecurityGroup" } ],
+        "ImageId" : "ami-09d95fab7fff3776c",
+		"AvailabilityZone" : "us-east-1a"
+      }
+     },
+      "EC2Instance2" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "InstanceType" : { "Ref" : "InstanceType" },
+        "KeyName" : { "Ref" : "KeyName" },
+        "SecurityGroups" : [ { "Ref" : "InstanceSecurityGroup" } ],
+        "ImageId" : "ami-09d95fab7fff3776c",
+		"AvailabilityZone" : "us-east-1c"
+      }
+     },
+      "sekharawsLoadBalancer" : {
+         "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+         "Properties" : {
+         "AvailabilityZones" : [ "us-east-1b" ],
+           "Instances" : [
+                         { "Ref" : "EC2Instance1" } , 
+                         { "Ref" : "EC2Instance2" }
+           ] ,
+        "Listeners" : [ {
+            "LoadBalancerPort" : "80",
+            "InstancePort" : "80",
+            "Protocol" : "HTTP"
+        } ],
+
+        "HealthCheck" : {
+            "Target" : "HTTP:80/",
+            "HealthyThreshold" : "3",
+            "UnhealthyThreshold" : "5",
+            "Interval" : "30",
+            "Timeout" : "5"
+            }
+          }
+       },
+     "InstanceSecurityGroup" : {
+        "Type" : "AWS::EC2::SecurityGroup",
+        "Properties" : {
+        "GroupDescription" : "Enable HTTP access via port 80",
+        "SecurityGroupIngress" : [ {
+          "IpProtocol" : "tcp",
+          "FromPort" : "80",
+          "ToPort" : "80",
+          "CidrIp" : "0.0.0.0/0"
+          } ]
+        }
+     }
+    },
+       "Parameters" : {
+      "KeyName": {
+       "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+       "Type": "AWS::EC2::KeyPair::KeyName",
+       "Default" : "cloudformationkeypair"
+       },
+     "InstanceType" : {  
+      "Description" : "WebServer EC2 instance type",
+      "Type" : "String",
+      "Default" : "t2.micro",
+      "AllowedValues" : [ "t2.micro" ],
+      "ConstraintDescription" : "must be a valid EC2 instance type."
+       }
+      }
+}

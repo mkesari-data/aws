@@ -1,0 +1,271 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "AWS CloudFormation Sample Template EC2InstanceWithSecurityGroupSample: Create an Amazon EC2 instance running the Amazon Linux AMI. The AMI is chosen based on the region in which the stack is run. This example creates an EC2 security group for the instance to give you SSH access. **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
+	"Resources": {
+		"EC2Instance1": {
+			"Type": "AWS::EC2::Instance",
+			"Properties": {
+				"InstanceType": {
+					"Ref": "InstanceType"
+				},
+				"KeyName": {
+					"Ref": "KeyName"
+				},
+				"NetworkInterfaces": [
+					{
+						"AssociatePublicIpAddress": "true",
+						"DeviceIndex": "0",
+						"SubnetId": {
+							"Ref": "PublicSubnet"
+						},
+						"GroupSet": [
+							{
+								"Ref": "InstanceSecurityGroup"
+							}
+						]
+					}
+				],
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "publicserver"
+					}
+				],
+				"ImageId": "ami-09d95fab7fff3776c"
+			}
+		},
+		"EC2Instance2": {
+			"Type": "AWS::EC2::Instance",
+			"Properties": {
+				"InstanceType": {
+					"Ref": "InstanceType"
+				},
+				"KeyName": {
+					"Ref": "KeyName"
+				},
+				"SubnetId": {
+					"Ref": "PrivateSubnet"
+				},
+				"SecurityGroupIds": [
+					{
+						"Fn::GetAtt": [
+							"InstanceSecurityGroup",
+							"GroupId"
+						]
+					}
+				],
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "privateserver"
+					}
+				],
+				"ImageId": "ami-09d95fab7fff3776c"
+			}
+		},
+		"InstanceSecurityGroup": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"GroupDescription": "Enable SSH access via port 22",
+				"SecurityGroupIngress": [
+					{
+						"IpProtocol": "tcp",
+						"FromPort": "22",
+						"ToPort": "22",
+						"CidrIp": "0.0.0.0/0"
+					},
+					{
+						"IpProtocol": "tcp",
+						"FromPort": 80,
+						"ToPort": 80,
+						"CidrIp": "0.0.0.0/0"
+					},
+					{
+						"IpProtocol": "tcp",
+						"FromPort": 443,
+						"ToPort": 443,
+						"CidrIp": "0.0.0.0/0"
+					}
+				],
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "vpc-SG"
+					}
+				]
+			}
+		},
+		"VPC": {
+			"Type": "AWS::EC2::VPC",
+			"Properties": {
+				"CidrBlock": "10.0.0.0/16",
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "newvpc"
+					}
+				]
+			}
+		},
+		"PublicSubnet": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"CidrBlock": "10.0.0.0/24",
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "PublicSubnet"
+					}
+				]
+			}
+		},
+		"PrivateSubnet": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"CidrBlock": "10.0.1.0/24",
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "PrivateSubnet"
+					}
+				]
+			}
+		},
+		"InternetGateway": {
+			"Type": "AWS::EC2::InternetGateway",
+			"Properties": {
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "myIGW"
+					}
+				]
+			}
+		},
+		"AttachGateway": {
+			"Type": "AWS::EC2::VPCGatewayAttachment",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"InternetGatewayId": {
+					"Ref": "InternetGateway"
+				}
+			}
+		},
+		"NAT": {
+			"Type": "AWS::EC2::NatGateway",
+			"Properties": {
+				"AllocationId": {
+					"Fn::GetAtt": [
+						"EIP",
+						"AllocationId"
+					]
+				},
+				"SubnetId": {
+					"Ref": "PublicSubnet"
+				},
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "myNatGateway"
+					}
+				]
+			}
+		},
+		"EIP": {
+			"DependsOn": "AttachGateway",
+			"Type": "AWS::EC2::EIP",
+			"Properties": {
+				"Domain": "VPC"
+			}
+		},
+		"Route": {
+			"Type": "AWS::EC2::Route",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "PublicRouteTable"
+				},
+				"DestinationCidrBlock": "0.0.0.0/0",
+				"NatGatewayId": {
+					"Ref": "NAT"
+				}
+			}
+		},
+		"PublicRouteTable": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "PublicRouteTable"
+					}
+				]
+			}
+		},
+		"PrivateRouteTable": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {
+					"Ref": "VPC"
+				},
+				"Tags": [
+					{
+						"Key": "Name",
+						"Value": "PrivateRouteTable"
+					}
+				]
+			}
+		},
+		"PublicSubnetRouteTableAssociation": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"SubnetId": {
+					"Ref": "PublicSubnet"
+				},
+				"RouteTableId": {
+					"Ref": "PublicRouteTable"
+				}
+			}
+		},
+		"PrivateSubnetRouteTableAssociation": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"SubnetId": {
+					"Ref": "PrivateSubnet"
+				},
+				"RouteTableId": {
+					"Ref": "PrivateRouteTable"
+				}
+			}
+		}
+	},
+	"Parameters": {
+		"KeyName": {
+			"Description": "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+			"Type": "AWS::EC2::KeyPair::KeyName",
+			"Default": "cloudformationkeypair"
+		},
+		"InstanceType": {
+			"Description": "WebServer EC2 instance type",
+			"Type": "String",
+			"Default": "t2.micro",
+			"AllowedValues": [
+				"t2.micro"
+			],
+			"ConstraintDescription": "must be a valid EC2 instance type."
+		}
+	}
+}
